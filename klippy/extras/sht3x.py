@@ -17,11 +17,12 @@ SHT3X_I2C_ADDR = 0x44
 SHT3X_CMD = {
     'MEASURE': {
         'STRETCH_ENABLED': {
-            'HIGH_REP': [0x2c, 0x06], # High   (15ms) repeatability measurement
+            # High   (15ms) repeatability measurement
+            'HIGH_REP': [0x2c, 0x06],
             'MED_REP': [0x2c, 0x0D],  # Medium (6ms)  repeatability measurement
             'LOW_REP': [0x2c, 0x10],  # Low    (4ms)  repeatability measurement
         },
-        'STRETCH_DISABLED' : {
+        'STRETCH_DISABLED': {
             'HIGH_REP': [0x24, 0x00],
             'MED_REP': [0x24, 0x0B],
             'LOW_REP': [0x24, 0x16],
@@ -39,7 +40,7 @@ SHT3X_CMD = {
             'READ': [0xF3, 0x2D],
             'CLEAN': [0x30, 0x41],
         },
-        'SOFTRESET': [0x30, 0xA2], # Soft reset
+        'SOFTRESET': [0x30, 0xA2],  # Soft reset
         'HEATER': {
             "ENABLE": [0x30, 0x6D],
             "DISABLE": [0x30, 0x66],
@@ -48,6 +49,7 @@ SHT3X_CMD = {
         'BREAK': [0x30, 0x93],
     }
 }
+
 
 class SHT3X:
     def __init__(self, config):
@@ -63,6 +65,7 @@ class SHT3X:
         self.printer.add_object("sht3x " + self.name, self)
         self.printer.register_event_handler("klippy:connect",
                                             self.handle_connect)
+
     def handle_connect(self):
         self._init_sht3x()
         self.reactor.update_timer(self.sample_timer, self.reactor.NOW)
@@ -108,7 +111,7 @@ class SHT3X:
             params = self.i2c.i2c_read(SHT3X_CMD['OTHER']['FETCH'], 6)
 
             response = bytearray(params['response'])
-            rtemp  = response[0] << 8
+            rtemp = response[0] << 8
             rtemp |= response[1]
             if self._crc8(rtemp) != response[2]:
                 logging.warning(
@@ -118,7 +121,7 @@ class SHT3X:
                 self.temp = -45 + (175 * rtemp / 65535)
                 logging.debug("sht3x: Temperature %.2f " % self.temp)
 
-            rhumid  = response[3] << 8
+            rhumid = response[3] << 8
             rhumid |= response[4]
             if self._crc8(rhumid) != response[5]:
                 logging.warning("sht3x: Checksum error on Humidity reading!")
@@ -149,8 +152,8 @@ class SHT3X:
         return bytes
 
     def _crc8(self, data):
-        #crc8 polynomial for 16bit value, CRC8 -> x^8 + x^5 + x^4 + 1
-        SHT3X_CRC8_POLYNOMINAL= 0x31
+        # crc8 polynomial for 16bit value, CRC8 -> x^8 + x^5 + x^4 + 1
+        SHT3X_CRC8_POLYNOMINAL = 0x31
         crc = 0xFF
         data_bytes = self._split_bytes(data)
         for byte in data_bytes:
@@ -167,6 +170,7 @@ class SHT3X:
             'temperature': round(self.temp, 2),
             'humidity': round(self.humidity, 1),
         }
+
 
 def load_config(config):
     # Register sensor

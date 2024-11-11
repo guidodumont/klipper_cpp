@@ -7,6 +7,8 @@ import logging
 from . import output_pin
 
 # Helper code for common LED initialization and control
+
+
 class LEDHelper:
     def __init__(self, config, update_func, led_count=1):
         self.printer = config.get_printer()
@@ -32,8 +34,10 @@ class LEDHelper:
         gcode.register_mux_command("SET_LED_TEMPLATE", "LED", name,
                                    self.cmd_SET_LED_TEMPLATE,
                                    desc=self.cmd_SET_LED_TEMPLATE_help)
+
     def get_status(self, eventtime=None):
         return {'color_data': self.led_state}
+
     def _set_color(self, index, color):
         if index is None:
             new_led_state = [color] * self.led_count
@@ -46,6 +50,7 @@ class LEDHelper:
             new_led_state[index - 1] = color
         self.led_state = new_led_state
         self.need_transmit = True
+
     def _template_update(self, index, text):
         try:
             parts = [max(0., min(1., float(f)))
@@ -56,6 +61,7 @@ class LEDHelper:
         if len(parts) < 4:
             parts += [0.] * (4 - len(parts))
         self._set_color(index, tuple(parts))
+
     def _check_transmit(self, print_time=None):
         if not self.need_transmit:
             return
@@ -65,6 +71,7 @@ class LEDHelper:
         except self.printer.command_error as e:
             logging.exception("led update transmit error")
     cmd_SET_LED_help = "Set the color of an LED"
+
     def cmd_SET_LED(self, gcmd):
         # Parse parameters
         red = gcmd.get_float('RED', 0., minval=0., maxval=1.)
@@ -76,18 +83,20 @@ class LEDHelper:
         sync = gcmd.get_int('SYNC', 1)
         color = (red, green, blue, white)
         # Update and transmit data
+
         def lookahead_bgfunc(print_time):
             self._set_color(index, color)
             if transmit:
                 self._check_transmit(print_time)
         if sync:
-            #Sync LED Update with print time and send
+            # Sync LED Update with print time and send
             toolhead = self.printer.lookup_object('toolhead')
             toolhead.register_lookahead_callback(lookahead_bgfunc)
         else:
-            #Send update now (so as not to wake toolhead and reset idle_timeout)
+            # Send update now (so as not to wake toolhead and reset idle_timeout)
             lookahead_bgfunc(None)
     cmd_SET_LED_TEMPLATE_help = "Assign a display_template to an LED"
+
     def cmd_SET_LED_TEMPLATE(self, gcmd):
         index = gcmd.get_int("INDEX", None, minval=1, maxval=self.led_count)
         set_template = self.template_eval.set_template
@@ -97,10 +106,13 @@ class LEDHelper:
             for i in range(self.led_count):
                 set_template(gcmd, self.tcallbacks[i], self._check_transmit)
 
+
 PIN_MIN_TIME = 0.100
 MAX_SCHEDULE_TIME = 5.0
 
 # Handler for PWM controlled LEDs
+
+
 class PrinterPWMLED:
     def __init__(self, config):
         self.printer = printer = config.get_printer()
@@ -127,6 +139,7 @@ class PrinterPWMLED:
         self.prev_color = color = self.led_helper.get_status()['color_data'][0]
         for idx, mcu_pin in self.pins:
             mcu_pin.setup_start_value(color[idx], 0.)
+
     def update_leds(self, led_state, print_time):
         if print_time is None:
             eventtime = self.printer.get_reactor().monotonic()
@@ -139,8 +152,10 @@ class PrinterPWMLED:
                 mcu_pin.set_pwm(print_time, color[idx])
                 self.last_print_time = print_time
         self.prev_color = color
+
     def get_status(self, eventtime=None):
         return self.led_helper.get_status(eventtime)
+
 
 def load_config_prefix(config):
     return PrinterPWMLED(config)

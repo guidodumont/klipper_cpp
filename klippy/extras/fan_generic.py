@@ -6,8 +6,10 @@
 import logging
 from . import fan, output_pin
 
+
 class PrinterFanGeneric:
     cmd_SET_FAN_SPEED_help = "Sets the speed of a fan"
+
     def __init__(self, config):
         self.printer = config.get_printer()
         self.fan = fan.Fan(config, default_shutdown_speed=0.)
@@ -24,12 +26,14 @@ class PrinterFanGeneric:
 
     def get_status(self, eventtime):
         return self.fan.get_status(eventtime)
+
     def _template_update(self, text):
         try:
             value = float(text)
         except ValueError as e:
             logging.exception("fan_generic template render error")
         self.fan.set_speed(value)
+
     def cmd_SET_FAN_SPEED(self, gcmd):
         speed = gcmd.get_float('SPEED', None, 0.)
         template = gcmd.get('TEMPLATE', None)
@@ -40,6 +44,7 @@ class PrinterFanGeneric:
             self.template_eval.set_template(gcmd, self._template_update)
             return
         self.fan.set_speed_from_command(speed)
+
 
 def load_config_prefix(config):
     return PrinterFanGeneric(config)

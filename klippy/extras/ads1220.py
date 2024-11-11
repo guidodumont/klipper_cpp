@@ -20,6 +20,8 @@ NOOP_CMD = 0x0
 RESET_STATE = bytearray([0x0, 0x0, 0x0, 0x0])
 
 # turn bytearrays into pretty hex strings: [0xff, 0x1]
+
+
 def hexify(byte_array):
     return "[%s]" % (", ".join([hex(b) for b in byte_array]))
 

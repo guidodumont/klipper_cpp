@@ -154,7 +154,7 @@ class Calibrater:
         return nozzle_points
 
     def _calculate_probe_points(self, nozzle_points,
-        probe_x_offset, probe_y_offset):
+                                probe_x_offset, probe_y_offset):
         # calculate the points to put the nozzle at
         # returned as a list of tuples
         probe_points = []
@@ -205,7 +205,7 @@ class Calibrater:
                 probe_points, nozzle_points, interval))
 
     def _manual_probe_callback_factory(self, probe_points,
-        nozzle_points, interval):
+                                       nozzle_points, interval):
         # returns a callback function for the manual probe
         is_end = self.current_point_index == len(probe_points) - 1
 

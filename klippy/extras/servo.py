@@ -7,6 +7,7 @@ from . import output_pin
 
 SERVO_SIGNAL_PERIOD = 0.020
 
+
 class PrinterServo:
     def __init__(self, config):
         self.printer = config.get_printer()
@@ -16,7 +17,8 @@ class PrinterServo:
                                          above=self.min_width,
                                          below=SERVO_SIGNAL_PERIOD)
         self.max_angle = config.getfloat('maximum_servo_angle', 180.)
-        self.angle_to_width = (self.max_width - self.min_width) / self.max_angle
+        self.angle_to_width = (
+            self.max_width - self.min_width) / self.max_angle
         self.width_to_value = 1. / SERVO_SIGNAL_PERIOD
         self.last_value = 0.
         initial_pwm = 0.
@@ -42,22 +44,27 @@ class PrinterServo:
         gcode.register_mux_command("SET_SERVO", "SERVO", servo_name,
                                    self.cmd_SET_SERVO,
                                    desc=self.cmd_SET_SERVO_help)
+
     def get_status(self, eventtime):
         return {'value': self.last_value}
+
     def _set_pwm(self, print_time, value):
         if value == self.last_value:
             return "discard", 0.
         self.last_value = value
         self.mcu_servo.set_pwm(print_time, value)
+
     def _get_pwm_from_angle(self, angle):
         angle = max(0., min(self.max_angle, angle))
         width = self.min_width + angle * self.angle_to_width
         return width * self.width_to_value
+
     def _get_pwm_from_pulse_width(self, width):
         if width:
             width = max(self.min_width, min(self.max_width, width))
         return width * self.width_to_value
     cmd_SET_SERVO_help = "Set servo angle"
+
     def cmd_SET_SERVO(self, gcmd):
         width = gcmd.get_float('WIDTH', None)
         if width is not None:
@@ -66,6 +73,7 @@ class PrinterServo:
             angle = gcmd.get_float('ANGLE')
             value = self._get_pwm_from_angle(angle)
         self.gcrq.queue_gcode_request(value)
+
 
 def load_config_prefix(config):
     return PrinterServo(config)

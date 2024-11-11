@@ -124,7 +124,7 @@ class ArcSupport:
 
         if (angular_travel == 0.
             and currentPos[alpha_axis] == targetPos[alpha_axis]
-            and currentPos[beta_axis] == targetPos[beta_axis]):
+                and currentPos[beta_axis] == targetPos[beta_axis]):
             # Make a circle if the angular rotation is 0 and the
             # target is current position
             angular_travel = 2. * math.pi
@@ -165,7 +165,6 @@ class ArcSupport:
             c[beta_axis] = center_Q + r_Q
             c[helical_axis] = currentPos[helical_axis] + dist_Helical
 
-
             if i == segments:
                 c = targetPos
             # Convert coords into G1 commands
@@ -178,6 +177,7 @@ class ArcSupport:
                 g1_params['F'] = asF
             g1_gcmd = self.gcode.create_gcode_command("G1", "G1", g1_params)
             self.gcode_move.cmd_G1(g1_gcmd)
+
 
 def load_config(config):
     return ArcSupport(config)

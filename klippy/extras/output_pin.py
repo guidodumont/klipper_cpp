@@ -3,7 +3,8 @@
 # Copyright (C) 2017-2024  Kevin O'Connor <kevin@koconnor.net>
 #
 # This file may be distributed under the terms of the GNU GPLv3 license.
-import logging, ast
+import logging
+import ast
 from .display import display
 
 
@@ -14,6 +15,8 @@ from .display import display
 PIN_MIN_TIME = 0.100
 
 # Helper code to queue g-code requests
+
+
 class GCodeRequestQueue:
     def __init__(self, config, mcu, callback):
         self.printer = printer = config.get_printer()
@@ -24,8 +27,10 @@ class GCodeRequestQueue:
         self.toolhead = None
         mcu.register_flush_callback(self._flush_notification)
         printer.register_event_handler("klippy:connect", self._handle_connect)
+
     def _handle_connect(self):
         self.toolhead = self.printer.lookup_object('toolhead')
+
     def _flush_notification(self, print_time, clock):
         rqueue = self.rqueue
         while rqueue:
@@ -52,12 +57,15 @@ class GCodeRequestQueue:
             self.next_min_flush_time = next_time + max(min_wait, PIN_MIN_TIME)
             # Ensure following queue items are flushed
             self.toolhead.note_mcu_movequeue_activity(self.next_min_flush_time)
+
     def _queue_request(self, print_time, value):
         self.rqueue.append((print_time, value))
         self.toolhead.note_mcu_movequeue_activity(print_time)
+
     def queue_gcode_request(self, value):
         self.toolhead.register_lookahead_callback(
             (lambda pt: self._queue_request(pt, value)))
+
     def send_async_request(self, value, print_time=None):
         if print_time is None:
             systime = self.printer.get_reactor().monotonic()
@@ -85,6 +93,8 @@ class GCodeRequestQueue:
 RENDER_TIME = 0.500
 
 # Main template evaluation code
+
+
 class PrinterTemplateEvaluator:
     def __init__(self, config):
         self.printer = config.get_printer()
@@ -95,11 +105,13 @@ class PrinterTemplateEvaluator:
         self.templates = dtemplates.get_display_templates()
         gcode_macro = self.printer.load_object(config, "gcode_macro")
         self.create_template_context = gcode_macro.create_template_context
+
     def _activate_timer(self):
         if self.render_timer is not None or not self.active_templates:
             return
         reactor = self.printer.get_reactor()
         self.render_timer = reactor.register_timer(self._render, reactor.NOW)
+
     def _activate_template(self, callback, template, lparams, flush_callback):
         if template is not None:
             uid = (template,) + tuple(sorted(lparams.items()))
@@ -108,6 +120,7 @@ class PrinterTemplateEvaluator:
             return
         if callback in self.active_templates:
             del self.active_templates[callback]
+
     def _render(self, eventtime):
         if not self.active_templates:
             # Nothing to do - unregister timer
@@ -117,6 +130,7 @@ class PrinterTemplateEvaluator:
             return reactor.NEVER
         # Setup gcode_macro template context
         context = self.create_template_context(eventtime)
+
         def render(name, **kwargs):
             return self.templates[name].render(context, **kwargs)
         context['render'] = render
@@ -136,11 +150,12 @@ class PrinterTemplateEvaluator:
             if flush_callback is not None:
                 flush_callbacks[flush_callback] = 1
             callback(text)
-        context.clear() # Remove circular references for better gc
+        context.clear()  # Remove circular references for better gc
         # Invoke optional flush callbacks
         for flush_callback in flush_callbacks.keys():
             flush_callback()
         return eventtime + RENDER_TIME
+
     def set_template(self, gcmd, callback, flush_callback=None):
         template = None
         lparams = {}
@@ -160,9 +175,11 @@ class PrinterTemplateEvaluator:
                 try:
                     lparams[p] = ast.literal_eval(v)
                 except ValueError as e:
-                    raise gcmd.error("Unable to parse '%s' as a literal" % (v,))
+                    raise gcmd.error(
+                        "Unable to parse '%s' as a literal" % (v,))
         self._activate_template(callback, template, lparams, flush_callback)
         self._activate_timer()
+
 
 def lookup_template_eval(config):
     printer = config.get_printer()
@@ -178,6 +195,7 @@ def lookup_template_eval(config):
 ######################################################################
 
 MAX_SCHEDULE_TIME = 5.0
+
 
 class PrinterOutputPin:
     def __init__(self, config):
@@ -213,8 +231,10 @@ class PrinterOutputPin:
         gcode.register_mux_command("SET_PIN", "PIN", pin_name,
                                    self.cmd_SET_PIN,
                                    desc=self.cmd_SET_PIN_help)
+
     def get_status(self, eventtime):
         return {'value': self.last_value}
+
     def _set_pin(self, print_time, value):
         if value == self.last_value:
             return "discard", 0.
@@ -223,6 +243,7 @@ class PrinterOutputPin:
             self.mcu_pin.set_pwm(print_time, value)
         else:
             self.mcu_pin.set_digital(print_time, value)
+
     def _template_update(self, text):
         try:
             value = float(text)
@@ -230,6 +251,7 @@ class PrinterOutputPin:
             logging.exception("output_pin template render error")
         self.gcrq.send_async_request(value)
     cmd_SET_PIN_help = "Set the value of an output pin"
+
     def cmd_SET_PIN(self, gcmd):
         value = gcmd.get_float('VALUE', None, minval=0., maxval=self.scale)
         template = gcmd.get('TEMPLATE', None)
@@ -245,6 +267,7 @@ class PrinterOutputPin:
             raise gcmd.error("Invalid pin value")
         # Queue requested value
         self.gcrq.queue_gcode_request(value)
+
 
 def load_config_prefix(config):
     return PrinterOutputPin(config)

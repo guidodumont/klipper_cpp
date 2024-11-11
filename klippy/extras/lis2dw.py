@@ -20,7 +20,7 @@ REG_LIS2DW_OUT_YL_ADDR = 0x2A
 REG_LIS2DW_OUT_YH_ADDR = 0x2B
 REG_LIS2DW_OUT_ZL_ADDR = 0x2C
 REG_LIS2DW_OUT_ZH_ADDR = 0x2D
-REG_LIS2DW_FIFO_CTRL   = 0x2E
+REG_LIS2DW_FIFO_CTRL = 0x2E
 REG_LIS2DW_FIFO_SAMPLES = 0x2F
 REG_MOD_READ = 0x80
 # REG_MOD_MULTI = 0x40
@@ -33,6 +33,8 @@ SCALE = FREEFALL_ACCEL * 1.952 / 4
 BATCH_UPDATES = 0.100
 
 # Printer class that controls LIS2DW chip
+
+
 class LIS2DW:
     def __init__(self, config):
         self.printer = config.get_printer()
@@ -68,24 +70,28 @@ class LIS2DW:
             "query_lis2dw oid=%c rest_ticks=%u", cq=cmdqueue)
         self.ffreader.setup_query_command("query_lis2dw_status oid=%c",
                                           oid=self.oid, cq=cmdqueue)
+
     def read_reg(self, reg):
         params = self.spi.spi_transfer([reg | REG_MOD_READ, 0x00])
         response = bytearray(params['response'])
         return response[1]
+
     def set_reg(self, reg, val, minclock=0):
         self.spi.spi_send([reg, val & 0xFF], minclock=minclock)
         stored_val = self.read_reg(reg)
         if stored_val != val:
             raise self.printer.command_error(
-                    "Failed to set LIS2DW register [0x%x] to 0x%x: got 0x%x. "
-                    "This is generally indicative of connection problems "
-                    "(e.g. faulty wiring) or a faulty lis2dw chip." % (
-                        reg, val, stored_val))
+                "Failed to set LIS2DW register [0x%x] to 0x%x: got 0x%x. "
+                "This is generally indicative of connection problems "
+                "(e.g. faulty wiring) or a faulty lis2dw chip." % (
+                    reg, val, stored_val))
+
     def start_internal_client(self):
         aqh = adxl345.AccelQueryHelper(self.printer)
         self.batch_bulk.add_client(aqh.handle_batch)
         return aqh
     # Measurement decoding
+
     def _convert_samples(self, samples):
         (x_pos, x_scale), (y_pos, y_scale), (z_pos, z_scale) = self.axes_map
         count = 0
@@ -97,6 +103,7 @@ class LIS2DW:
             samples[count] = (round(ptime, 6), x, y, z)
             count += 1
     # Start, stop, and process message batches
+
     def _start_measurements(self):
         # In case of miswiring, testing LIS2DW device ID prevents treating
         # noise or wrong signal as a correctly initialized device
@@ -126,6 +133,7 @@ class LIS2DW:
         # Initialize clock tracking
         self.ffreader.note_start()
         self.last_error_count = 0
+
     def _finish_measurements(self):
         # Halt bulk reading
         self.set_reg(REG_LIS2DW_FIFO_CTRL, 0x00)
@@ -133,6 +141,7 @@ class LIS2DW:
         self.ffreader.note_end()
         logging.info("LIS2DW finished '%s' measurements", self.name)
         self.set_reg(REG_LIS2DW_FIFO_CTRL, 0x00)
+
     def _process_batch(self, eventtime):
         samples = self.ffreader.pull_samples()
         self._convert_samples(samples)
@@ -141,8 +150,10 @@ class LIS2DW:
         return {'data': samples, 'errors': self.last_error_count,
                 'overflows': self.ffreader.get_last_overflows()}
 
+
 def load_config(config):
     return LIS2DW(config)
+
 
 def load_config_prefix(config):
     return LIS2DW(config)

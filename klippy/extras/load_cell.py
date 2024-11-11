@@ -7,6 +7,8 @@ from . import hx71x
 from . import ads1220
 
 # Printer class that controls a load cell
+
+
 class LoadCell:
     def __init__(self, config, sensor):
         self.printer = printer = config.get_printer()
@@ -18,6 +20,7 @@ class LoadCell:
     def get_sensor(self):
         return self.sensor
 
+
 def load_config(config):
     # Sensor types
     sensors = {}
@@ -25,6 +28,7 @@ def load_config(config):
     sensors.update(ads1220.ADS1220_SENSOR_TYPE)
     sensor_class = config.getchoice('sensor_type', sensors)
     return LoadCell(config, sensor_class(config))
+
 
 def load_config_prefix(config):
     return load_config(config)

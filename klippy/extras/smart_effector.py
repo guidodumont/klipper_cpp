@@ -11,6 +11,7 @@ from . import probe
 # https://github.com/Duet3D/SmartEffectorFirmware
 BITS_PER_SECOND = 1000.
 
+
 class ControlPinHelper:
     def __init__(self, pin_params):
         self._mcu = pin_params['chip']
@@ -19,6 +20,7 @@ class ControlPinHelper:
         self._oid = None
         self._set_cmd = None
         self._mcu.register_config_callback(self._build_config)
+
     def _build_config(self):
         self._mcu.request_move_queue_slot()
         self._oid = self._mcu.create_oid()
@@ -29,6 +31,7 @@ class ControlPinHelper:
         cmd_queue = self._mcu.alloc_command_queue()
         self._set_cmd = self._mcu.lookup_command(
             "queue_digital_out oid=%c clock=%u on_ticks=%u", cq=cmd_queue)
+
     def write_bits(self, start_time, bit_stream):
         bit_step = 1. / BITS_PER_SECOND
         last_value = self._start_value
@@ -47,6 +50,7 @@ class ControlPinHelper:
             self._set_cmd.send([self._oid, clock, self._start_value])
             bit_time += bit_step
         return bit_time
+
 
 class SmartEffectorProbe:
     def __init__(self, config):
@@ -84,17 +88,23 @@ class SmartEffectorProbe:
         self.gcode.register_command("SET_SMART_EFFECTOR",
                                     self.cmd_SET_SMART_EFFECTOR,
                                     desc=self.cmd_SET_SMART_EFFECTOR_help)
+
     def get_probe_params(self, gcmd=None):
         return self.probe_session.get_probe_params(gcmd)
+
     def get_offsets(self):
         return self.probe_offsets.get_offsets()
+
     def get_status(self, eventtime):
         return self.cmd_helper.get_status(eventtime)
+
     def start_probe_session(self, gcmd):
         return self.probe_session.start_probe_session(gcmd)
+
     def probing_move(self, pos, speed):
         phoming = self.printer.lookup_object('homing')
         return phoming.probing_move(self, pos, speed)
+
     def probe_prepare(self, hmove):
         toolhead = self.printer.lookup_object('toolhead')
         self.probe_wrapper.probe_prepare(hmove)
@@ -103,14 +113,16 @@ class SmartEffectorProbe:
             toolhead_info = toolhead.get_status(systime)
             self.old_max_accel = toolhead_info['max_accel']
             self.gcode.run_script_from_command(
-                    "M204 S%.3f" % (self.probe_accel,))
+                "M204 S%.3f" % (self.probe_accel,))
         if self.recovery_time:
             toolhead.dwell(self.recovery_time)
+
     def probe_finish(self, hmove):
         if self.probe_accel:
             self.gcode.run_script_from_command(
-                    "M204 S%.3f" % (self.old_max_accel,))
+                "M204 S%.3f" % (self.old_max_accel,))
         self.probe_wrapper.probe_finish(hmove)
+
     def _send_command(self, buf):
         # Each byte is sent to the SmartEffector as
         # [0 0 1 0 b7 b6 b5 b4 !b4 b3 b2 b1 b0 !b0]
@@ -133,6 +145,7 @@ class SmartEffectorProbe:
         toolhead.dwell(end_time - start_time)
         toolhead.wait_moves()
     cmd_SET_SMART_EFFECTOR_help = 'Set SmartEffector parameters'
+
     def cmd_SET_SMART_EFFECTOR(self, gcmd):
         sensitivity = gcmd.get_int('SENSITIVITY', None, minval=0, maxval=255)
         respond_info = []
@@ -149,20 +162,22 @@ class SmartEffectorProbe:
                                             minval=0.)
         if self.probe_accel:
             respond_info.append(
-                    "probing accelartion: %.3f" % (self.probe_accel,))
+                "probing accelartion: %.3f" % (self.probe_accel,))
         else:
             respond_info.append("probing acceleration control disabled")
         if self.recovery_time:
             respond_info.append(
-                    "probe recovery time: %.3f" % (self.recovery_time,))
+                "probe recovery time: %.3f" % (self.recovery_time,))
         else:
             respond_info.append("probe recovery time disabled")
         gcmd.respond_info("SmartEffector:\n" + "\n".join(respond_info))
     cmd_RESET_SMART_EFFECTOR_help = 'Reset SmartEffector settings (sensitivity)'
+
     def cmd_RESET_SMART_EFFECTOR(self, gcmd):
         buf = [131, 131]
         self._send_command(buf)
         gcmd.respond_info('SmartEffector sensitivity was reset')
+
 
 def load_config(config):
     smart_effector = SmartEffectorProbe(config)

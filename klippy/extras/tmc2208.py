@@ -6,7 +6,7 @@
 import logging
 from . import tmc, tmc_uart, tmc2130
 
-TMC_FREQUENCY=12000000.
+TMC_FREQUENCY = 12000000.
 
 Registers = {
     "GCONF": 0x00, "GSTAT": 0x01, "IFCNT": 0x02, "SLAVECONF": 0x03,
@@ -219,11 +219,13 @@ class TMC2208:
         set_config_field(config, "pwm_lim", 12)
         # TPOWERDOWN
         set_config_field(config, "tpowerdown", 20)
+
     def read_translate(self, reg_name, val):
         if reg_name == "IOIN":
             drv_type = self.fields.get_field("sel_a", val)
             reg_name = "IOIN@TMC220x" if drv_type else "IOIN@TMC222x"
         return reg_name, val
+
 
 def load_config_prefix(config):
     return TMC2208(config)

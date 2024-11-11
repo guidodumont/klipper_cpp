@@ -14,6 +14,8 @@ SAMPLE_ERROR_DESYNC = -0x80000000
 SAMPLE_ERROR_LONG_READ = 0x40000000
 
 # Implementation of HX711 and HX717
+
+
 class HX71xBase:
     def __init__(self, config, sensor_type,
                  sample_rate_options, default_sample_rate,
@@ -42,7 +44,7 @@ class HX71xBase:
         # gain/channel choices
         self.gain_channel = int(config.getchoice('gain', gain_options,
                                                  default=default_gain))
-        ## Bulk Sensor Setup
+        # Bulk Sensor Setup
         self.bulk_queue = bulk_sensor.BulkDataQueue(mcu, oid=self.oid)
         # Clock tracking
         chip_smooth = self.sps * UPDATE_INTERVAL * 2
@@ -119,7 +121,7 @@ class HX71xBase:
         self.query_hx71x_cmd.send_wait_ack([self.oid, 0])
         self.ffreader.note_end()
         logging.info("%s finished '%s' measurements",
-                    self.sensor_type, self.name)
+                     self.sensor_type, self.name)
 
     def _process_batch(self, eventtime):
         prev_overflows = self.ffreader.get_last_overflows()

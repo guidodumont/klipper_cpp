@@ -12,6 +12,7 @@ KELVIN_TO_CELSIUS = -273.15
 # Polynomial Helper Classes and Functions
 ######################################################################
 
+
 def calc_determinant(matrix):
     m = matrix
     aei = m[0][0] * m[1][1] * m[2][2]
@@ -21,6 +22,7 @@ def calc_determinant(matrix):
     bdi = m[1][0] * m[0][1] * m[2][2]
     afh = m[0][0] * m[2][1] * m[1][2]
     return aei + bfg + cdh - ceg - bdi - afh
+
 
 class Polynomial2d:
     def __init__(self, a, b, c):
@@ -80,6 +82,7 @@ class Polynomial2d:
         a1 = calc_determinant(m1) / det_m
         a2 = calc_determinant(m2) / det_m
         return cls(a0, a1, a2)
+
 
 class TemperatureProbe:
     def __init__(self, config):
@@ -301,6 +304,7 @@ class TemperatureProbe:
                 "TEMPERATURE_WAIT SENSOR=%s MINIMUM=%f"
                 % (extr_name, temp)
             )
+
     def _set_bed_temp(self, temp):
         if self.cal_bed_temp is None:
             # Bed temperature not configured
@@ -348,6 +352,7 @@ class TemperatureProbe:
     cmd_TEMPERATURE_PROBE_CALIBRATE_help = (
         "Calibrate probe temperature drift compensation"
     )
+
     def cmd_TEMPERATURE_PROBE_CALIBRATE(self, gcmd):
         if self.cal_helper is None:
             raise gcmd.error(
@@ -416,6 +421,7 @@ class TemperatureProbe:
         )
 
     cmd_TEMPERATURE_PROBE_NEXT_help = "Sample next probe drift temperature"
+
     def cmd_TEMPERATURE_PROBE_NEXT(self, gcmd):
         manual_probe.verify_no_manual_probe(self.printer)
         self.next_auto_temp = 99999999.
@@ -438,17 +444,20 @@ class TemperatureProbe:
         )
 
     cmd_TEMPERATURE_PROBE_COMPLETE_help = "Finish Probe Drift Calibration"
+
     def cmd_TEMPERATURE_PROBE_COMPLETE(self, gcmd):
         manual_probe.verify_no_manual_probe(self.printer)
         self._finalize_drift_cal(self.sample_count >= 3)
 
     cmd_TEMPERATURE_PROBE_ABORT_help = "Abort Probe Drift Calibration"
+
     def cmd_TEMPERATURE_PROBE_ABORT(self, gcmd):
         self._finalize_drift_cal(False)
 
     cmd_TEMPERATURE_PROBE_ENABLE_help = (
         "Set adjustment factor applied to drift correction"
     )
+
     def cmd_TEMPERATURE_PROBE_ENABLE(self, gcmd):
         if self.cal_helper is not None:
             self.cal_helper.set_enabled(gcmd)
@@ -481,6 +490,7 @@ class TemperatureProbe:
 #####################################################################
 
 DRIFT_SAMPLE_COUNT = 9
+
 
 class EddyDriftCompensation:
     def __init__(self, config, sensor):
@@ -553,7 +563,8 @@ class EddyDriftCompensation:
     def note_z_calibration_finish(self):
         self.cal_temp = (self.cal_temp + self.get_temperature()) / 2.0
         configfile = self.printer.lookup_object('configfile')
-        configfile.set(self.name, "calibration_temp", "%.6f " % (self.cal_temp))
+        configfile.set(self.name, "calibration_temp",
+                       "%.6f " % (self.cal_temp))
         gcode = self.printer.lookup_object("gcode")
         gcode.respond_info(
             "%s: Z Calibration Temperature set to %.2f. "
